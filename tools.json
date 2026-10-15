@@ -1,0 +1,15 @@
+{
+  "runner": "dotnet",
+  "assembly": "CrystalCode.Tools.Query.dll",
+  "types": [
+    "CrystalCode.Tools.Query.Tools.QueryTool"
+  ],
+  "catalogs": ["plan", "work"],
+  "approval": "always",
+  "timeoutSeconds": 60,
+  "tools": {
+    "query": {
+      "pathArguments": ["path"]
+    }
+  }
+}
