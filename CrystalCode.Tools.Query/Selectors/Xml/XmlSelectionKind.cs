@@ -1,4 +1,4 @@
-namespace CrystalCode.Tools.Query.Xml;
+namespace CrystalCode.Tools.Query.Selectors.Xml;
 
 /// <summary>
 /// What an XML selection holds.

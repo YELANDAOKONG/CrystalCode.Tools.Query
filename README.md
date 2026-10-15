@@ -86,4 +86,4 @@ dotnet test CrystalCode.Tools.Query.sln
 dotnet publish CrystalCode.Tools.Query/CrystalCode.Tools.Query.csproj
 ```
 
-`Crystal.Tools` is referenced as a sibling source project. The production project adds no NuGet packages; the test project uses xUnit and Microsoft.NET.Test.Sdk only. `QueryTool` is the public `ITool` listed in `tools.json`; the host loads this class library in one isolated load context and wraps every call with its own approval, output truncation, and timeout. The JSON and XML selectors live in `Json` and `Xml`, the file pipeline in `Reading`, and result rendering in `Rendering`, all covered by the test project.
+`Crystal.Tools` is referenced as a sibling source project. The production project adds no NuGet packages; the test project uses xUnit and Microsoft.NET.Test.Sdk only. `QueryTool` is the public `ITool` listed in `tools.json`; the host loads this class library in one isolated load context and wraps every call with its own approval, output truncation, and timeout. The JSON and XML selectors live in `Selectors`, the file pipeline in `Reading`, and result rendering in `Rendering`, all covered by the test project.

@@ -1,8 +1,8 @@
 using System.Text.Json.Nodes;
 
-using CrystalCode.Tools.Query.Json;
+using CrystalCode.Tools.Query.Selectors.Json;
 
-namespace CrystalCode.Tools.Query.Tests.Json;
+namespace CrystalCode.Tools.Query.Tests.Selectors.Json;
 
 public sealed class JsonPointerTests
 {

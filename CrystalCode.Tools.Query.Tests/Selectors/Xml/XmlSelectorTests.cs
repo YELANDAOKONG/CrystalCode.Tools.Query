@@ -1,8 +1,8 @@
 using System.Xml.Linq;
 
-using CrystalCode.Tools.Query.Xml;
+using CrystalCode.Tools.Query.Selectors.Xml;
 
-namespace CrystalCode.Tools.Query.Tests.Xml;
+namespace CrystalCode.Tools.Query.Tests.Selectors.Xml;
 
 public sealed class XmlSelectorTests
 {

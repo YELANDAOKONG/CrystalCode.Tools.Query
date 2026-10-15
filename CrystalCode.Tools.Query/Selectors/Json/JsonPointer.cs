@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace CrystalCode.Tools.Query.Json;
+namespace CrystalCode.Tools.Query.Selectors.Json;
 
 /// <summary>
 /// RFC 6901 JSON Pointer parsing and selection over a node tree.

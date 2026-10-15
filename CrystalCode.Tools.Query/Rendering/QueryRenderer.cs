@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 
-using CrystalCode.Tools.Query.Xml;
+using CrystalCode.Tools.Query.Selectors.Xml;
 
 namespace CrystalCode.Tools.Query.Rendering;
 

@@ -1,6 +1,6 @@
 using System.Xml.Linq;
 
-namespace CrystalCode.Tools.Query.Xml;
+namespace CrystalCode.Tools.Query.Selectors.Xml;
 
 /// <summary>
 /// The result of one XML selector: matched elements or extracted values.

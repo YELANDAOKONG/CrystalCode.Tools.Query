@@ -1,4 +1,4 @@
-namespace CrystalCode.Tools.Query.Xml;
+namespace CrystalCode.Tools.Query.Selectors.Xml;
 
 /// <summary>
 /// A parsed XML selector: element steps and the value the path selects.

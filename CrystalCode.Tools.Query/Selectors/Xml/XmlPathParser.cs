@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace CrystalCode.Tools.Query.Xml;
+namespace CrystalCode.Tools.Query.Selectors.Xml;
 
 /// <summary>
 /// Parses an XML selector into steps: /a/b, //b, *, name[n], @name, and text().

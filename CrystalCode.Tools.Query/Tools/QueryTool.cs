@@ -5,10 +5,10 @@ using System.Xml.Linq;
 
 using Crystal.Tools;
 
-using CrystalCode.Tools.Query.Json;
 using CrystalCode.Tools.Query.Reading;
 using CrystalCode.Tools.Query.Rendering;
-using CrystalCode.Tools.Query.Xml;
+using CrystalCode.Tools.Query.Selectors.Json;
+using CrystalCode.Tools.Query.Selectors.Xml;
 
 namespace CrystalCode.Tools.Query.Tools;
 

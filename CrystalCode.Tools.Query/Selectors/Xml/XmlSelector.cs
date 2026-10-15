@@ -1,6 +1,6 @@
 using System.Xml.Linq;
 
-namespace CrystalCode.Tools.Query.Xml;
+namespace CrystalCode.Tools.Query.Selectors.Xml;
 
 /// <summary>
 /// Evaluates a parsed XML path over one document with namespace-insensitive
