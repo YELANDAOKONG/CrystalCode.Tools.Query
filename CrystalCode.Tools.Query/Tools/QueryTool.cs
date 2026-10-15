@@ -27,12 +27,15 @@ public sealed class QueryTool : ITool
         + "JSON uses an RFC 6901 JSON Pointer such as /scripts/build or /items/0 (0-based); "
         + "the empty selector means the whole document. "
         + "XML uses an element path such as /Project/PropertyGroup/TargetFramework, //PackageReference, "
-        + "child[2] for the nth match (1-based), @Version for an attribute value, or text() for the text value; "
+        + "child[2] for the nth match (1-based), @Version for an attribute value, or text() for all text "
+        + "inside the element, trimmed; "
         + "matching ignores namespaces. "
         + "The format is detected from the path extension (.json, .jsonc, .xml, .csproj, .props, .targets, "
-        + ".plist, .svg) or from the content; format overrides the detection. YAML is not supported. "
+        + ".vbproj, .fsproj, .plist, .svg, .xaml, .resx, .config) or from the content; format overrides the detection. "
+        + "YAML is not supported. "
         + "offset and limit page arrays and match lists; limit defaults to 50 and is capped at 200. "
         + "A selector that finds nothing fails with the surrounding structure. "
+        + "An object that repeats a member name is rejected with the repeated member's pointer. "
         + "Paths outside the workspace require approval.";
 
     private const string Schema =
@@ -123,31 +126,12 @@ public sealed class QueryTool : ITool
 
     private static string QueryJson(string text, QueryArguments arguments)
     {
-        JsonNode? root;
-        try
+        if (!JsonPointer.TryReadDocument(text, out var root, out var error))
         {
-            root = JsonNode.Parse(
-                text,
-                nodeOptions: null,
-                documentOptions: new JsonDocumentOptions
-                {
-                    AllowTrailingCommas = true,
-                    CommentHandling = JsonCommentHandling.Skip,
-                    MaxDepth = QueryLimits.MaximumJsonDepth
-                });
-        }
-        catch (JsonException exception)
-        {
-            throw new QueryException(
-                $"Invalid JSON at line {exception.LineNumber + 1}, "
-                + $"position {exception.BytePositionInLine + 1}: {exception.Message}");
-        }
-        catch (ArgumentException exception)
-        {
-            throw new QueryException("Invalid JSON: " + exception.Message);
+            throw new QueryException(error ?? "Invalid JSON.");
         }
 
-        if (!JsonPointer.TryParse(arguments.Selector, out var tokens, out var error))
+        if (!JsonPointer.TryParse(arguments.Selector, out var tokens, out error))
         {
             throw new QueryException(error ?? "The JSON selector is not valid.");
         }

@@ -118,6 +118,71 @@ public sealed class JsonPointerTests
     }
 
     [Fact]
+    public void TryParse_LongSelector_Fails()
+    {
+        var selector = "/" + new string('a', QueryLimits.MaximumSelectorCharacters);
+
+        Assert.False(JsonPointer.TryParse(selector, out _, out var error));
+
+        Assert.Contains("too long", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TryReadDocument_DuplicateMember_FailsInsteadOfThrowing()
+    {
+        Assert.False(JsonPointer.TryReadDocument(
+            """{"dependencies":{"left-pad":"1.0.0","left-pad":"2.0.0"}}""",
+            out var root,
+            out var error));
+
+        Assert.Null(root);
+        Assert.Contains("repeats the member '/dependencies/left-pad'", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TryReadDocument_DuplicateInBackground_FailsForAnySelector()
+    {
+        Assert.False(JsonPointer.TryReadDocument(
+            """{"a":1,"dup":{"x":1,"x":2}}""",
+            out _,
+            out var error));
+
+        Assert.Contains("repeats the member '/dup/x'", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TryReadDocument_DuplicateAtRoot_Fails()
+    {
+        Assert.False(JsonPointer.TryReadDocument("""{"a":1,"a":2}""", out _, out var error));
+
+        Assert.Contains("repeats the member '/a'", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TryReadDocument_DuplicateInsideArray_ReportsTheIndex()
+    {
+        Assert.False(JsonPointer.TryReadDocument("""{"items":[{"x":1,"x":2}]}""", out _, out var error));
+
+        Assert.Contains("repeats the member '/items/0/x'", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TryReadDocument_InvalidJson_NamesTheLine()
+    {
+        Assert.False(JsonPointer.TryReadDocument("{\n  \"a\":\n}", out _, out var error));
+
+        Assert.Contains("Invalid JSON at line", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TryReadDocument_EscapesTheReportedPath()
+    {
+        Assert.False(JsonPointer.TryReadDocument("""{"a/b":{"x":1,"x":2}}""", out _, out var error));
+
+        Assert.Contains("repeats the member '/a~1b/x'", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TrySelect_WholeDocument_SelectsTheRoot()
     {
         var root = JsonNode.Parse("""{"a":1}""");

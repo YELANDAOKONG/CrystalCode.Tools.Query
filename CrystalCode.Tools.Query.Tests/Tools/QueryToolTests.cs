@@ -146,6 +146,69 @@ public sealed class QueryToolTests
     }
 
     [Fact]
+    public async Task JsonDuplicateKeys_FailWithATeachingMessage()
+    {
+        using var temp = new TemporaryDirectory();
+        var path = temp.WriteFile(
+            "package.json",
+            """{"dependencies":{"left-pad":"1.0.0","left-pad":"2.0.0"}}""");
+
+        var output = await QueryAsync(path, selector: "/dependencies/left-pad");
+
+        Assert.Equal(ToolResultStatus.Failure, output.Status);
+        Assert.Contains("repeats the member '/dependencies/left-pad'", output.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task XmlText_ConcatenatesNestedText()
+    {
+        using var temp = new TemporaryDirectory();
+        var path = temp.WriteFile("doc.xml", "<a>  hello <b>inner</b> tail  </a>");
+
+        var output = await QueryAsync(path, selector: "/a/text()");
+
+        Assert.Equal(ToolResultStatus.Success, output.Status);
+        Assert.Equal("hello inner tail", output.Text);
+    }
+
+    [Fact]
+    public async Task XmlLongSelector_Fails()
+    {
+        using var temp = new TemporaryDirectory();
+        var path = temp.WriteFile("doc.xml", "<a/>");
+        var selector = "/" + string.Join("/", Enumerable.Repeat("a", 3000));
+
+        var output = await QueryAsync(path, selector: selector);
+
+        Assert.Equal(ToolResultStatus.Failure, output.Status);
+        Assert.Contains("too long", output.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Failure_BomOnlyFile_IsEmpty()
+    {
+        using var temp = new TemporaryDirectory();
+        var path = temp.WriteBytes("bom.json", [0xEF, 0xBB, 0xBF]);
+
+        var output = await QueryAsync(path);
+
+        Assert.Equal(ToolResultStatus.Failure, output.Status);
+        Assert.Contains("is empty", output.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Failure_WhitespaceOnlyFile()
+    {
+        using var temp = new TemporaryDirectory();
+        var path = temp.WriteFile("blank.json", "   \n\t ");
+
+        var output = await QueryAsync(path);
+
+        Assert.Equal(ToolResultStatus.Failure, output.Status);
+        Assert.Contains("only whitespace", output.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task FormatOverride_WinsForAnUnknownExtension()
     {
         using var temp = new TemporaryDirectory();

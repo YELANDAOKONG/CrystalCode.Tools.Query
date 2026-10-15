@@ -19,9 +19,8 @@ internal static class JsonPointer
             return true;
         }
 
-        if (selector.Length > QueryLimits.MaximumSelectorCharacters)
+        if (!QueryLimits.IsSelectorLengthAllowed(selector, out error))
         {
-            error = "The selector is too long.";
             return false;
         }
 
@@ -48,6 +47,73 @@ internal static class JsonPointer
 
         tokens = parsed;
         return true;
+    }
+
+    /// <summary>
+    /// Parses one JSON document and rejects repeated object members up front,
+    /// because a parsed JsonObject with duplicate keys refuses Count, lookup, and
+    /// enumeration, which every later select, render, and preview path performs.
+    /// </summary>
+    /// <param name="text">The complete document text.</param>
+    /// <param name="root">The parsed root, or null for the JSON literal null.</param>
+    /// <param name="error">The failure message on invalid or ambiguous JSON.</param>
+    public static bool TryReadDocument(string text, out JsonNode? root, out string? error)
+    {
+        root = null;
+        error = null;
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(
+                text,
+                new JsonDocumentOptions
+                {
+                    AllowTrailingCommas = true,
+                    CommentHandling = JsonCommentHandling.Skip,
+                    MaxDepth = QueryLimits.MaximumJsonDepth
+                });
+        }
+        catch (JsonException exception)
+        {
+            error = $"Invalid JSON at line {exception.LineNumber + 1}, "
+                + $"position {exception.BytePositionInLine + 1}: {exception.Message}";
+            return false;
+        }
+
+        using (document)
+        {
+            if (!TryFindDuplicate(document.RootElement, [], out var duplicatePath))
+            {
+                error = $"The document repeats the member '{BuildPath(duplicatePath!)}'; repeated members cannot be "
+                    + "selected unambiguously. Remove the repeated member first.";
+                return false;
+            }
+        }
+
+        try
+        {
+            root = JsonNode.Parse(
+                text,
+                nodeOptions: null,
+                documentOptions: new JsonDocumentOptions
+                {
+                    AllowTrailingCommas = true,
+                    CommentHandling = JsonCommentHandling.Skip,
+                    MaxDepth = QueryLimits.MaximumJsonDepth
+                });
+            return true;
+        }
+        catch (JsonException exception)
+        {
+            error = $"Invalid JSON at line {exception.LineNumber + 1}, "
+                + $"position {exception.BytePositionInLine + 1}: {exception.Message}";
+            return false;
+        }
+        catch (ArgumentException exception)
+        {
+            error = "Invalid JSON: " + exception.Message;
+            return false;
+        }
     }
 
     public static bool TrySelect(
@@ -183,6 +249,80 @@ internal static class JsonPointer
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Scans the raw element tree for repeated object members. The scan reads the
+    /// backing JsonElement, which keeps duplicates, so it never triggers the
+    /// dictionary rebuild that makes a parsed duplicate-key JsonObject throw.
+    /// </summary>
+    /// <param name="element">The element to scan.</param>
+    /// <param name="path">The member path segments built so far.</param>
+    /// <param name="duplicatePath">The first repeated member's path segments.</param>
+    private static bool TryFindDuplicate(
+        JsonElement element,
+        List<string> path,
+        out List<string>? duplicatePath)
+    {
+        duplicatePath = null;
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+            {
+                var seen = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var property in element.EnumerateObject())
+                {
+                    if (!seen.Add(property.Name))
+                    {
+                        duplicatePath = [.. path, property.Name];
+                        return false;
+                    }
+
+                    path.Add(property.Name);
+                    var unique = TryFindDuplicate(property.Value, path, out duplicatePath);
+                    path.RemoveAt(path.Count - 1);
+                    if (!unique)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            case JsonValueKind.Array:
+            {
+                var index = 0;
+                foreach (var item in element.EnumerateArray())
+                {
+                    path.Add(index.ToString(CultureInfo.InvariantCulture));
+                    var unique = TryFindDuplicate(item, path, out duplicatePath);
+                    path.RemoveAt(path.Count - 1);
+                    if (!unique)
+                    {
+                        return false;
+                    }
+
+                    index++;
+                }
+
+                return true;
+            }
+
+            default:
+                return true;
+        }
+    }
+
+    private static string BuildPath(List<string> segments)
+    {
+        var builder = new StringBuilder();
+        foreach (var segment in segments)
+        {
+            builder.Append('/').Append(segment.Replace("~", "~0").Replace("/", "~1"));
+        }
+
+        return builder.ToString();
     }
 
     private static string DescribeMembers(JsonObject target)

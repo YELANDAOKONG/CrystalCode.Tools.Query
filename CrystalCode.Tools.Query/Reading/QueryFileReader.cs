@@ -53,6 +53,17 @@ internal static class QueryFileReader
             return (null, "The file could not be read.");
         }
 
+        var text = Decode(bytes);
+        if (text.Length == 0)
+        {
+            return (null, "The file is empty.");
+        }
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return (null, "The file contains only whitespace.");
+        }
+
         var probe = Math.Min(bytes.Length, QueryLimits.BinaryProbeBytes);
         for (var index = 0; index < probe; index++)
         {
@@ -62,12 +73,7 @@ internal static class QueryFileReader
             }
         }
 
-        if (bytes.Length == 0)
-        {
-            return (null, "The file is empty.");
-        }
-
-        return (Decode(bytes), null);
+        return (text, null);
     }
 
     private static string Decode(byte[] bytes)

@@ -46,7 +46,7 @@ The format comes from the path extension (`.json`, `.jsonc`, `.xml`, `.csproj`, 
 | `/items/0` | The first item of `items` (0-based) |
 | `/a~1b` | The member `a/b` (`~1` is `/`, `~0` is `~`) |
 
-A selected scalar returns its raw value text — `0.10` stays `0.10` and strings are not quoted. A selected object or array is printed as indented JSON. A missing member fails with the available members; array indexes reject leading zeros and `-`; `offset` and `limit` page arrays and are refused on non-arrays.
+A selected scalar returns its raw value text — `0.10` stays `0.10` and strings are not quoted. A selected object or array is printed as indented JSON. An object that repeats a member name is rejected up front with the repeated member's pointer, because such a document has no unambiguous members to select. A missing member fails with the available members; array indexes reject leading zeros and `-`; `offset` and `limit` page arrays and are refused on non-arrays.
 
 ### XML paths
 
@@ -58,9 +58,9 @@ A selected scalar returns its raw value text — `0.10` stays `0.10` and strings
 | `/Project/ItemGroup[2]` | The second `ItemGroup` match (1-based) |
 | `/Project/*` | Every child element |
 | `/Project/@Sdk` | An attribute value |
-| `/Project/PropertyGroup/TargetFramework/text()` | The trimmed text value |
+| `/Project/PropertyGroup/TargetFramework/text()` | The element's text, trimmed |
 
-Element and attribute names compare by local name, so a document with a default namespace or a prefix needs no special syntax. Multiple element matches print one serialized element per numbered block; `offset` and `limit` page the matches. A selector that finds nothing lists the available child elements or attribute names at the failing step.
+Element and attribute names compare by local name, so a document with a default namespace or a prefix needs no special syntax. `text()` returns all text inside the matched element — nested elements included — concatenated and trimmed. Multiple element matches print one serialized element per numbered block; `offset` and `limit` page the matches. A selector that finds nothing lists the available child elements or attribute names at the failing step.
 
 ## Paths and limits
 

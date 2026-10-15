@@ -134,6 +134,16 @@ public sealed class XmlPathParserTests
     }
 
     [Fact]
+    public void TryParse_LongSelector_Fails()
+    {
+        var selector = "/" + new string('a', QueryLimits.MaximumSelectorCharacters);
+
+        Assert.False(XmlPathParser.TryParse(selector, out _, out var error));
+
+        Assert.Contains("too long", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TryParse_DoubleIndex_Fails()
     {
         Assert.False(XmlPathParser.TryParse("/a/b[1][2]", out _, out _));

@@ -17,6 +17,11 @@ internal static class XmlPathParser
             return true;
         }
 
+        if (!QueryLimits.IsSelectorLengthAllowed(selector, out error))
+        {
+            return false;
+        }
+
         var text = selector.Trim();
         if (text[0] != '/')
         {
