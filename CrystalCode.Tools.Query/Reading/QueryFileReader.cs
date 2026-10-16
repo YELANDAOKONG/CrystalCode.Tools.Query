@@ -42,7 +42,17 @@ internal static class QueryFileReader
         byte[] bytes;
         try
         {
-            bytes = await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false);
+            await using var stream = new FileStream(
+                path, FileMode.Open, FileAccess.Read, FileShare.Read,
+                bufferSize: QueryLimits.BinaryProbeBytes, useAsync: true);
+            var boundedBytes = await ReadBoundedAsync(stream, cancellationToken).ConfigureAwait(false);
+            if (boundedBytes is null)
+            {
+                return (null, $"The file is larger than {QueryLimits.MaximumFileBytes} bytes; "
+                    + "use grep, search, or bash to narrow it first.");
+            }
+
+            bytes = boundedBytes;
         }
         catch (OperationCanceledException)
         {
@@ -64,16 +74,44 @@ internal static class QueryFileReader
             return (null, "The file contains only whitespace.");
         }
 
-        var probe = Math.Min(bytes.Length, QueryLimits.BinaryProbeBytes);
+        // Probe decoded characters so UTF-16/UTF-32 padding is not mistaken for binary data.
+        var probe = Math.Min(text.Length, QueryLimits.BinaryProbeBytes);
         for (var index = 0; index < probe; index++)
         {
-            if (bytes[index] == 0)
+            if (text[index] == '\0')
             {
                 return (null, "The file looks binary and is not queried.");
             }
         }
 
         return (text, null);
+    }
+
+    internal static async Task<byte[]?> ReadBoundedAsync(
+        Stream stream,
+        CancellationToken cancellationToken)
+    {
+        using var contents = new MemoryStream();
+        var buffer = new byte[QueryLimits.BinaryProbeBytes];
+        while (true)
+        {
+            // Read one extra byte to detect growth without trusting file metadata.
+            var remaining = QueryLimits.MaximumFileBytes - (int)contents.Length;
+            var count = await stream.ReadAsync(
+                buffer.AsMemory(0, Math.Min(buffer.Length, remaining + 1)),
+                cancellationToken).ConfigureAwait(false);
+            if (count == 0)
+            {
+                return contents.ToArray();
+            }
+
+            if (count > remaining)
+            {
+                return null;
+            }
+
+            contents.Write(buffer, 0, count);
+        }
     }
 
     private static string Decode(byte[] bytes)
