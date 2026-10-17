@@ -31,10 +31,12 @@ public sealed class QueryToolTests
     public void Definition_ReportsTheQueryTool()
     {
         var definition = new QueryTool().Definition;
+        var input = Assert.IsType<JsonToolInput>(definition.Input);
 
         Assert.Equal("query", definition.Name);
+        Assert.Equal(ToolInputKind.Json, input.Kind);
         Assert.Contains(
-            definition.InputSchema.GetProperty("required").EnumerateArray(),
+            input.Schema.GetProperty("required").EnumerateArray(),
             item => item.GetString() == "path");
         Assert.NotNull(definition.Description);
         Assert.Contains("JSON Pointer", definition.Description, StringComparison.Ordinal);
@@ -396,7 +398,7 @@ public sealed class QueryToolTests
     public async Task Failure_UnknownArgument()
     {
         var output = await new QueryTool().InvokeAsync(
-            new ToolCall("1", "query", """{"path":"a.json","wat":1}"""));
+            new ToolCall("1", "query", """{"path":"a.json","wat":1}""", ToolInputKind.Json));
 
         Assert.Equal(ToolResultStatus.Failure, output.Status);
         Assert.Contains("contain only path", output.Text, StringComparison.Ordinal);
@@ -410,7 +412,7 @@ public sealed class QueryToolTests
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
             await new QueryTool().InvokeAsync(
-                new ToolCall("1", "query", """{"path":"a.json"}"""),
+                new ToolCall("1", "query", """{"path":"a.json"}""", ToolInputKind.Json),
                 cancellation.Token));
     }
 
@@ -443,6 +445,7 @@ public sealed class QueryToolTests
         }
 
         var arguments = JsonSerializer.Serialize(payload);
-        return await new QueryTool().InvokeAsync(new ToolCall("1", "query", arguments));
+        return await new QueryTool().InvokeAsync(
+            new ToolCall("1", "query", arguments, ToolInputKind.Json));
     }
 }
